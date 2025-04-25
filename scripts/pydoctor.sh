@@ -1,4 +1,4 @@
-PROJECT_NAME=DSLR
+PROJECT_NAME=Leaffliction
 
 pydoctor \
     --project-name=${PROJECT_NAME} \
