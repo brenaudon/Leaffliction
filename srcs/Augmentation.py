@@ -108,6 +108,8 @@ def augment_image(image_path, number_of_augments=6, display=False):
                for f in os.listdir(image_root)):
             del augmentation_funcs[aug_name]
 
+    number_of_augments = min(number_of_augments, len(augmentation_funcs))
+
     # Randomly pick N augmentation types
     chosen = random.sample(list(augmentation_funcs.items()),
                            number_of_augments)
@@ -121,31 +123,41 @@ def augment_image(image_path, number_of_augments=6, display=False):
             print(f"[✓] Saved: {out_path}")
 
     if display:
-        # Display original and augmented images
-        fig, axs = plt.subplots(2, 4, figsize=(16, 8))
-        fig.suptitle(f"Augmentations for: {basename}", fontsize=16)
+        plot_augmentation(image_path, augmentation_funcs_copy)
 
-        axs = axs.ravel()
 
-        # Original image
-        axs[0].imshow(image)
-        axs[0].set_title("Original")
-        axs[0].axis('off')
+def plot_augmentation(image_path, augmentations):
+    # Display original and augmented images
+    basename = os.path.basename(image_path)
+    image = Image.open(image_path).convert("RGB")
+    fig, axs = plt.subplots(2, 4, figsize=(16, 8))
+    fig.suptitle(f"Augmentations for: {basename}", fontsize=16)
 
-        # Augmented images
-        for idx, (aug_name, aug_fn) in enumerate(chosen, start=1):
-            aug_img = aug_fn(image)
-            axs[idx].imshow(aug_img)
-            axs[idx].set_title(aug_name)
-            axs[idx].axis('off')
+    axs = axs.ravel()
 
-        # Hide any unused subplots
-        for ax in axs[len(chosen) + 1:]:
-            ax.axis('off')
+    # Original image
+    axs[0].imshow(image)
+    axs[0].set_title("Original")
+    axs[0].axis('off')
 
-        plt.tight_layout()
-        plt.subplots_adjust(top=0.88)
-        plt.show()
+    # Augmented images
+    for idx, (aug_name, aug_fn) in enumerate(augmentations.items(), start=1):
+        name, ext = os.path.splitext(basename)
+        aug_img = Image.open(os.path.join(
+            os.path.dirname(image_path),
+            f"{name}_{aug_name}{ext}"
+        )).convert("RGB")
+        axs[idx].imshow(aug_img)
+        axs[idx].set_title(aug_name)
+        axs[idx].axis('off')
+
+    # Hide any unused subplots
+    for ax in axs[len(augmentations) + 1:]:
+        ax.axis('off')
+
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.88)
+    plt.show()
 
 
 def process_directory(input_root):
@@ -167,6 +179,9 @@ def process_directory(input_root):
     # minimum number of images * 7 as we create 6 augmentations
     goal_count = image_count[min_class] * 7
 
+    num_classes = len(image_count.keys())
+    i = 1
+
     for class_dir in image_count.keys():
         full_class_path = os.path.join(input_root, class_dir)
         # exclude possible augmented images
@@ -183,7 +198,7 @@ def process_directory(input_root):
             continue
 
         print(f"[→] Augmenting {class_dir} to reach {goal_count} images"
-              f" (current images: {count})")
+              f" (current images: {count}) | Class {i}/{num_classes}")
 
         num_augment_by_img = num_needed // count
 
@@ -202,6 +217,8 @@ def process_directory(input_root):
             img_file = random.choice(current_images)
             img_path = os.path.join(full_class_path, img_file)
             augment_image(img_path, number_of_augments=1)
+
+        i += 1
 
 
 def main():
