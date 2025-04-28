@@ -39,6 +39,8 @@ def augment_image(image_path, number_of_augments=6, display=False):
     @type image_path: str
     @param number_of_augments: Number of augmentations to apply
     @type number_of_augments: int
+    @param display: Whether to display the augmented images or not
+    @type display: bool
 
     @return: None
     """
