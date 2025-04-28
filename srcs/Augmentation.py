@@ -59,12 +59,39 @@ def augment_image(image_path, number_of_augments=6, display=False):
     h, w = np_image.shape[:2]
 
     def blur(img):
+        """
+        Apply Gaussian blur to the image.
+
+        @param img: Image to blur
+        @type img: PIL.Image.Image
+
+        @return: Blurred image
+        @rtype: PIL.Image.Image
+        """
         return img.filter(ImageFilter.GaussianBlur(radius=1.2))
 
     def flip(img):
+        """
+        Apply horizontal flip to the image.
+
+        @param img: Image to flip
+        @type img: PIL.Image.Image
+
+        @return: Flipped image
+        @rtype: PIL.Image.Image
+        """
         return ImageOps.mirror(img)
 
     def brightness(img):
+        """
+        Apply random brightness adjustment to the image.
+
+        @param img: Image to adjust
+        @type img: PIL.Image.Image
+
+        @return: Brightness adjusted image
+        @rtype: PIL.Image.Image
+        """
         return cv2_to_pil(
             A.RandomBrightnessContrast(brightness_limit=0.4,
                                        contrast_limit=0, p=1.0)
@@ -72,12 +99,30 @@ def augment_image(image_path, number_of_augments=6, display=False):
         )
 
     def crop(img):
+        """
+        Apply random crop to the image.
+
+        @param img: Image to crop
+        @type img: PIL.Image.Image
+
+        @return: Cropped image
+        @rtype: PIL.Image.Image
+        """
         return cv2_to_pil(
             A.RandomCrop(height=int(crop_factor * h),
                          width=int(crop_factor * w))(
                 image=pil_to_cv2(img))["image"])
 
     def distortion(img):
+        """
+        Apply elastic distortion to the image.
+
+        @param img: Image to distort
+        @type img: PIL.Image.Image
+
+        @return: Distorted image
+        @rtype: PIL.Image.Image
+        """
         return cv2_to_pil(
             A.Compose([
                 A.PadIfNeeded(min_height=int(h * 1.5), min_width=int(w * 1.5),
@@ -87,6 +132,15 @@ def augment_image(image_path, number_of_augments=6, display=False):
             ])(image=pil_to_cv2(img))["image"])
 
     def grid_distortion(img):
+        """
+        Apply grid distortion to the image.
+
+        @param img: Image to distort
+        @type img: PIL.Image.Image
+
+        @return: Distorted image
+        @rtype: PIL.Image.Image
+        """
         return cv2_to_pil(
             A.GridDistortion(num_steps=10, distort_limit=0.5, p=1.0)(
                 image=pil_to_cv2(img))["image"])
@@ -127,6 +181,16 @@ def augment_image(image_path, number_of_augments=6, display=False):
 
 
 def plot_augmentation(image_path, augmentations):
+    """
+    Plot the original and augmented images.
+
+    @param image_path: Path to the original image
+    @type image_path: str
+    @param augmentations: Dictionary of augmentations
+    @type augmentations: dict
+
+    @return: None
+    """
     # Display original and augmented images
     basename = os.path.basename(image_path)
     image = Image.open(image_path).convert("RGB")
