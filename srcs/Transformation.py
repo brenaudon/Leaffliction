@@ -1,3 +1,22 @@
+"""
+This script applies various transformations to images, including Gaussian blur,
+masking, region of interest extraction, object analysis, landmark detection,
+and color histogram computation. It can process a single image or all images
+in a directory. The results can be saved or displayed.
+
+Dependencies:
+    - os
+    - cv2
+    - argparse
+    - numpy
+    - pandas
+    - seaborn
+    - tqdm
+    - matplotlib.pyplot
+    - plantcv.plantcv
+    - scipy.signal.savgol_filter
+"""
+
 import os
 import cv2
 import argparse
@@ -222,7 +241,8 @@ def apply_transformations(
         image_path,
         save_results=False,
         dst_directory=None,
-        tags=None
+        tags=None,
+        plot=True
 ):
     """
     Apply transformations to image and save or display the results if needed.
@@ -235,6 +255,8 @@ def apply_transformations(
     @type dst_directory: str
     @param tags: Dictionary of transformation flags
     @type tags: dict
+    @param plot: Flag to plot results or not
+    @type plot: bool
 
     @return: None
     """
@@ -307,7 +329,7 @@ def apply_transformations(
 
     if save_results and dst_directory:
         save_transformed_data(results, name, dst_directory)
-    else:
+    elif plot:
         plot_results(results, name)
 
     return results
