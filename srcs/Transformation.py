@@ -310,6 +310,8 @@ def apply_transformations(
     else:
         plot_results(results, name)
 
+    return results
+
 
 def process_directory(src, dst, tags):
     """
