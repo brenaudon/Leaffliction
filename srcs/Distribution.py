@@ -95,6 +95,10 @@ def main():
         return
 
     base_dir = sys.argv[1]
+
+    if not os.path.isdir(base_dir):
+        print(f"Error: {base_dir} is not a valid directory.")
+        return
     plant_name = os.path.basename(base_dir.rstrip('/'))
 
     data = count_images(base_dir)
