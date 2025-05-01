@@ -11,13 +11,16 @@ Dependencies:
     - tensorflow.keras.Input
     - tensorflow.keras.Model
     - generator (custom module for data generation)
+    - save_zip (custom module for saving model and zip it with cache)
 """
 
 import os
 import sys
 import random
 from tensorflow.keras import layers, Input, Model
+from tensorflow.keras.callbacks import EarlyStopping
 from generator import LeafDataGenerator
+from save_zip import save_model_and_cache
 
 
 def create_encoder():
@@ -59,8 +62,8 @@ def create_model(num_classes):
 
     # Histogram input and MLP encoder
     hist_input = Input(shape=(2304,))
-    h = layers.Dense(128, activation='relu')(hist_input)
-    h = layers.Dense(64, activation='relu')(h)
+    h = layers.Dense(64, activation='relu')(hist_input)
+    h = layers.Dense(32, activation='relu')(h)
     hist_features = h
 
     # Fusion: concatenate all features
@@ -103,6 +106,13 @@ def main():
     class_names = sorted(os.listdir(base_dir))
     all_samples = []
 
+    # save class names to a file (create if not exists)
+    if not os.path.exists("model"):
+        os.makedirs("model")
+    with open("model/class_names.txt", "w") as f:
+        for class_name in class_names:
+            f.write(f"{class_name}\n")
+
     for class_name in class_names:
         class_path = os.path.join(base_dir, class_name)
         for fname in os.listdir(class_path):
@@ -118,10 +128,22 @@ def main():
     val_samples = all_samples[int(0.9 * len(all_samples)):]
 
     # Create generators using pre-split data
-    train_gen = LeafDataGenerator(train_samples, class_names)
-    val_gen = LeafDataGenerator(val_samples, class_names)
+    train_gen = LeafDataGenerator(train_samples, class_names,
+                                  batch_size=8, mode='train')
+    val_gen = LeafDataGenerator(val_samples, class_names,
+                                batch_size=8, mode='validation')
 
-    model.fit(train_gen, validation_data=val_gen, epochs=10)
+    early_stopping = EarlyStopping(monitor='val_accuracy',
+                                   patience=2,
+                                   restore_best_weights=True,
+                                   start_from_epoch=3)
+
+    model.fit(train_gen,
+              validation_data=val_gen,
+              epochs=10,
+              callbacks=[early_stopping])
+
+    save_model_and_cache(model)
 
 
 if __name__ == "__main__":

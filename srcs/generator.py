@@ -39,9 +39,11 @@ class LeafDataGenerator(Sequence):
     @type image_size: tuple
     @ivar shuffle: Whether to shuffle the data at the end of each epoch
     @type shuffle: bool
+    @ivar mode: Mode of the generator (train/validation)
+    @type mode: str
     """
     def __init__(self, samples, class_names, batch_size=32,
-                 image_size=(256, 256), shuffle=True):
+                 image_size=(256, 256), shuffle=True, mode='train'):
         """
         Initialize the data generator.
 
@@ -55,6 +57,8 @@ class LeafDataGenerator(Sequence):
         @type image_size: tuple
         @param shuffle: Whether to shuffle the data at the end of each epoch
         @type shuffle: bool
+        @param mode: Mode of the generator (train/validation)
+        @type mode: str
 
         @return: None
         """
@@ -65,6 +69,8 @@ class LeafDataGenerator(Sequence):
         self.samples = samples
         self.class_names = class_names
         self.num_classes = len(class_names)
+
+        self.mode = mode
 
         self.on_epoch_end()
 
@@ -109,8 +115,7 @@ class LeafDataGenerator(Sequence):
 
         for img_path, class_name in batch_samples:
             image_base = os.path.splitext(os.path.basename(img_path))[0]
-            cache_dir = os.path.join("cache", class_name)
-            os.makedirs(cache_dir, exist_ok=True)
+            cache_dir = os.path.join(f"cache/{self.mode}", class_name)
 
             transformed = {}
             all_exist = True
@@ -139,6 +144,7 @@ class LeafDataGenerator(Sequence):
                 transformed = apply_transformations(img_path, plot=False)
 
                 # Save images
+                os.makedirs(cache_dir, exist_ok=True)
                 for key in image_keys:
                     cv2.imwrite(
                         os.path.join(cache_dir, f"{image_base}_{key}.jpg"),
