@@ -18,9 +18,8 @@ import os
 import sys
 import random
 from tensorflow.keras import layers, Input, Model
-from tensorflow.keras.callbacks import EarlyStopping
 from generator import LeafDataGenerator
-from save_zip import save_model_and_cache
+from save_zip import zip_model_and_cache
 
 
 def create_encoder():
@@ -100,6 +99,8 @@ def main():
         print(f"Error: {base_dir} is not a valid directory.")
         return
 
+    model_dir = "model"
+
     num_classes = len(os.listdir(base_dir))
     model = create_model(num_classes)
     # Gather all samples
@@ -133,17 +134,34 @@ def main():
     val_gen = LeafDataGenerator(val_samples, class_names,
                                 batch_size=8, mode='validation')
 
-    early_stopping = EarlyStopping(monitor='val_accuracy',
-                                   patience=2,
-                                   restore_best_weights=True,
-                                   start_from_epoch=3)
-
     model.fit(train_gen,
               validation_data=val_gen,
-              epochs=10,
-              callbacks=[early_stopping])
+              epochs=1)
 
-    save_model_and_cache(model)
+    total_epochs = 15
+
+    for epoch in range(1, total_epochs):
+        user_input = input(f"Epoch {epoch + 1}/{total_epochs}."
+                           f" Continue training? (y/n): ")
+        if user_input.lower() != 'y':
+            print("Training stopped by user.")
+            user_input = input("Save last model? (y/n): ")
+            if user_input.lower() == 'y':
+                print("Saving model...")
+                model.save(model_dir + "/model.keras")
+            else:
+                print("Model not saved.")
+            break
+        # Save model
+        print("Saving last model...")
+        model.save(model_dir + "/model.keras")
+        print("Continuing training...")
+        model.fit(train_gen, validation_data=val_gen, epochs=1)
+
+    # Only keep Original image in validation cache
+    val_gen.keep_original()
+
+    zip_model_and_cache(model)
 
 
 if __name__ == "__main__":

@@ -45,6 +45,14 @@ def analyze_image(image, mask):
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE,
                                            cv2.CHAIN_APPROX_SIMPLE)
     output = image.copy()
+
+    if not contours:
+        # Handle empty contours
+        # This can happen if the mask is empty or no contours are found
+        # Happens when the image is almost monochrome and brightness was
+        # pushed up, leaf not detached from the background
+        return output  # Return the original image unmodified
+
     # Draw contours
     cv2.drawContours(output, contours, -1, (0, 0, 255), thickness=3)
 
@@ -271,6 +279,7 @@ def apply_transformations(
     s = pcv.rgb2gray_hsv(image, 's')
     s_thresh = pcv.threshold.binary(gray_img=s, threshold=65,
                                     object_type='light')
+
     if tags is None or tags['gaussian']:
         gaussian_mask = pcv.gaussian_blur(img=s_thresh, ksize=(3, 3),
                                           sigma_x=0, sigma_y=None)
@@ -308,18 +317,32 @@ def apply_transformations(
         top, bottom, center_v = (
             pcv.homology.x_axis_pseudolandmarks(image, blur_mask))
         image_copy = image.copy()
-        for i in range(len(top)):
-            cv2.circle(image_copy, (int(top[i][0][0]),
-                                    int(top[i][0][1])),
-                       3, (0, 0, 255), -1)
-        for i in range(len(bottom)):
-            cv2.circle(image_copy, (int(bottom[i][0][0]),
-                                    int(bottom[i][0][1])),
-                       3, (255, 0, 255), -1)
-        for i in range(len(center_v)):
-            cv2.circle(image_copy, (int(center_v[i][0][0]),
-                                    int(center_v[i][0][1])),
-                       3, (255, 128, 0), -1)
+
+        # Helper function to safely parse coordinates
+        def safe_parse_coord(coord):
+            try:
+                return int(float(coord))
+            except (ValueError, TypeError):
+                return None
+
+        for landmark_set, color in zip([top, bottom, center_v],
+                                       [(0, 0, 255), (255, 0, 255),
+                                        (255, 128, 0)]):
+            for landmark in landmark_set:
+                # Ensure landmark has correct structure and length
+                # Some images which are almost monochrome may have no mask
+                # and thus no landmarks
+                if (isinstance(landmark, (list, tuple, np.ndarray))
+                        and len(landmark) > 0
+                        and isinstance(landmark[0], (list, tuple, np.ndarray))
+                        and len(landmark[0]) >= 2):
+
+                    x = safe_parse_coord(landmark[0][0])
+                    y = safe_parse_coord(landmark[0][1])
+
+                    if x is not None and y is not None:
+                        cv2.circle(image_copy, (x, y), 3, color, -1)
+
         results['Landmark'] = image_copy
 
     # Color Histogram

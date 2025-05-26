@@ -95,7 +95,7 @@ def augment_image(image_path, number_of_augments=6, display=False):
         @rtype: PIL.Image.Image
         """
         return cv2_to_pil(
-            A.RandomBrightnessContrast(brightness_limit=0.4,
+            A.RandomBrightnessContrast(brightness_limit=0.2,
                                        contrast_limit=0, p=1.0)
             (image=pil_to_cv2(img))["image"]
         )

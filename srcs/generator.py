@@ -159,6 +159,7 @@ class LeafDataGenerator(Sequence):
             image_keys = [k for k in transformed if k != 'Color_Histogram']
             for i, key in enumerate(image_keys):
                 img_array = transformed[key]
+                img_array = cv2.resize(img_array, (256, 256))
                 img_array = cv2.cvtColor(img_array, cv2.COLOR_BGR2RGB)
                 img_array = img_array.astype('float32') / 255.0
                 image_batches[i].append(img_array)
@@ -179,3 +180,32 @@ class LeafDataGenerator(Sequence):
         y = np.stack(label_batch)
 
         return tuple(X), y
+
+    def keep_original(self):
+        """
+        Keep only the original image in the validation cache.
+        This is useful to reduce the size of the cache during validation.
+
+        @return: None
+        """
+        if self.mode != 'validation':
+            raise ValueError("This method should only be called "
+                             "in validation mode.")
+        for img_path, class_name in self.samples:
+            image_base = os.path.splitext(os.path.basename(img_path))[0]
+            cache_dir = os.path.join(f"cache/{self.mode}", class_name)
+            original_path = os.path.join(cache_dir,
+                                         f"{image_base}_Original.jpg")
+            if os.path.exists(original_path):
+                # Remove all other cached images
+                for key in ["Gaussian Blur", "Mask", "ROI",
+                            "Analyze Objects", "Landmark"]:
+                    other_path = os.path.join(cache_dir,
+                                              f"{image_base}_{key}.jpg")
+                    if os.path.exists(other_path):
+                        os.remove(other_path)
+                # Remove histogram
+                histogram_path = os.path.join(cache_dir,
+                                              f"{image_base}_hist.csv")
+                if os.path.exists(histogram_path):
+                    os.remove(histogram_path)

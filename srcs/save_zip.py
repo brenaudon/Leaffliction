@@ -11,8 +11,7 @@ import shutil
 import hashlib
 
 
-def save_model_and_cache(
-        model,
+def zip_model_and_cache(
         model_dir="model",
         cache_dir="cache",
         zip_name="leaffliction_package.zip"):
@@ -30,9 +29,6 @@ def save_model_and_cache(
 
     @return: None
     """
-    # Save model
-    print("Saving model...")
-    model.save(model_dir + "/model.keras")
 
     # Zip model and cache
     print(f"Creating ZIP file: {zip_name}")

@@ -5,19 +5,23 @@ import cv2
 from tensorflow.keras.models import load_model
 from generator import apply_transformations  # Reuse your function
 
+
 def load_class_names(model_dir="model"):
     # Optionally load from saved list
     classes_path = os.path.join(model_dir, "class_names.txt")
     if os.path.exists(classes_path):
         with open(classes_path, "r") as f:
             return [line.strip() for line in f.readlines()]
-    return ["Class 0", "Class 1", "Class 2", "Class 3"]  # Default fallback
+    else:
+        raise FileNotFoundError(f"Class names file not found in {model_dir}")
+
 
 def preprocess_image(img):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img = cv2.resize(img, (256, 256))
     img = img.astype("float32") / 255.0
     return img
+
 
 def predict(image_path):
     # Load and transform image
@@ -35,7 +39,7 @@ def predict(image_path):
     histogram_input = np.expand_dims(values, axis=0)
 
     # Load model and class names
-    model = load_model("model/model.h5")
+    model = load_model("model/model.keras")
     class_names = load_class_names("model")
 
     # Predict
@@ -43,7 +47,9 @@ def predict(image_path):
     predicted_index = np.argmax(prediction[0])
     predicted_label = class_names[predicted_index]
 
-    print(f"Predicted class: {predicted_label} (confidence: {prediction[0][predicted_index]:.2f})")
+    print(f"Predicted class: {predicted_label} "
+          f"(confidence: {prediction[0][predicted_index]:.2f})")
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
