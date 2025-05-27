@@ -6,6 +6,7 @@ allowing for efficient data loading and preprocessing during model training.
 
 Dependencies:
     - os
+    - gc
     - cv2
     - numpy
     - pandas
@@ -14,6 +15,7 @@ Dependencies:
 """
 
 import os
+import gc
 import cv2
 import numpy as np
 import pandas as pd
@@ -43,7 +45,7 @@ class LeafDataGenerator(Sequence):
     @type mode: str
     """
     def __init__(self, samples, class_names, batch_size=32,
-                 image_size=(256, 256), shuffle=True, mode='train'):
+                 image_size=(256, 256), shuffle=True, mode='train', **kwargs):
         """
         Initialize the data generator.
 
@@ -62,6 +64,8 @@ class LeafDataGenerator(Sequence):
 
         @return: None
         """
+        super().__init__(**kwargs)
+
         self.batch_size = batch_size
         self.image_size = image_size
         self.shuffle = shuffle
@@ -174,6 +178,13 @@ class LeafDataGenerator(Sequence):
             label_batch.append(to_categorical(label_index,
                                               num_classes=self.num_classes))
 
+            # Clean up to free memory
+            del transformed
+            del histogram
+            del img_array
+            gc.collect()
+
+
         # Stack inputs for Keras
         X = ([np.stack(batch) for batch in image_batches]
              + [np.stack(histogram_batch)])
@@ -183,29 +194,27 @@ class LeafDataGenerator(Sequence):
 
     def keep_original(self):
         """
-        Keep only the original image in the validation cache.
-        This is useful to reduce the size of the cache during validation.
+        Keep only the original image in the cache.
+        Used on validation cache so we can easily call predict on it later.
 
         @return: None
         """
-        if self.mode != 'validation':
-            raise ValueError("This method should only be called "
-                             "in validation mode.")
-        for img_path, class_name in self.samples:
-            image_base = os.path.splitext(os.path.basename(img_path))[0]
-            cache_dir = os.path.join(f"cache/{self.mode}", class_name)
-            original_path = os.path.join(cache_dir,
-                                         f"{image_base}_Original.jpg")
-            if os.path.exists(original_path):
-                # Remove all other cached images
-                for key in ["Gaussian Blur", "Mask", "ROI",
-                            "Analyze Objects", "Landmark"]:
-                    other_path = os.path.join(cache_dir,
-                                              f"{image_base}_{key}.jpg")
-                    if os.path.exists(other_path):
-                        os.remove(other_path)
-                # Remove histogram
-                histogram_path = os.path.join(cache_dir,
-                                              f"{image_base}_hist.csv")
-                if os.path.exists(histogram_path):
-                    os.remove(histogram_path)
+        directory = f"cache/{self.mode}"
+        for root, _, files in os.walk(directory):
+            for file in files:
+                if 'Original' not in file:
+                    file_path = os.path.join(root, file)
+                    try:
+                        os.remove(file_path)
+                    except Exception as e:
+                        print(f"[⚠️] Failed to delete {file_path}: {e}")
+                else:
+                    # Rename the original file to remove the suffix
+                    new_name = file.replace('_Original', '')
+                    new_path = os.path.join(root, new_name)
+                    old_path = os.path.join(root, file)
+                    try:
+                        os.rename(old_path, new_path)
+                    except Exception as e:
+                        print(f"[⚠️] Failed to rename {old_path}"
+                              f" to {new_path}: {e}")
