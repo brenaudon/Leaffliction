@@ -1,6 +1,6 @@
 absl-py==2.2.2
 albucore==0.0.24
-albumentations==2.0.6
+albumentations==2.0.8
 altair==5.5.0
 annotated-types==0.7.0
 astunparse==1.6.3
