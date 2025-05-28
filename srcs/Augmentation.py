@@ -278,8 +278,16 @@ def process_directory(input_root):
                               number_of_augments=num_augment_by_img)
 
         # Augment a few more images to reach the goal
+        # Could do directly with while but no tqdm progress bar then
         for _ in tqdm(range(goal_count -
                             (count + count * num_augment_by_img))):
+            img_file = random.choice(current_images)
+            img_path = os.path.join(full_class_path, img_file)
+            augment_image(img_path, number_of_augments=1)
+
+        # Ensure we reach the goal count
+        # (in case same augmentation was applied twice on the same image)
+        while len(os.listdir(full_class_path)) < goal_count:
             img_file = random.choice(current_images)
             img_path = os.path.join(full_class_path, img_file)
             augment_image(img_path, number_of_augments=1)
