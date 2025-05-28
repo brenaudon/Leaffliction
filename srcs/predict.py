@@ -19,7 +19,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.models import load_model
-from generator import apply_transformations
+from Transformation import apply_transformations
 
 
 def load_class_names(model_dir="model"):
@@ -155,7 +155,7 @@ def predict_single(image_path, model, class_names, show_plot=True):
 
     if show_plot:
         show_result(transformed["Original"], transformed["Mask"],
-                predicted_label, confidence)
+                    predicted_label, confidence)
 
     return predicted_label, confidence
 
@@ -210,8 +210,7 @@ def evaluate_directory(dir_path, model, class_names):
 
         idx += 1
 
-
-    acc   = correct / total
+    acc = correct / total
     print("-" * 80)
     print(f"Accuracy on {total} images: {acc:.2%} ({correct}/{total})")
 

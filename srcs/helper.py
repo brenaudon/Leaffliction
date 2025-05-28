@@ -43,8 +43,8 @@ def main():
     @return: None
     """
     if len(sys.argv) != 2:
-        print("Usage: python Augmentation.py "
-              "<path_to_image | path_to_directory>")
+        print("Usage: python helper.py "
+              "<path_to_directory>")
         sys.exit(1)
 
     input_path = sys.argv[1]
