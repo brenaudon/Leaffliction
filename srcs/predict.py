@@ -160,15 +160,15 @@ def predict_single(image_path, model, class_names, show_plot=True):
     return predicted_label, confidence
 
 
-def evaluate_directory(dir_path, model, class_names):
+def evaluate_list(paths_list, model, class_names):
     """
     Evaluate all images in a directory and print predictions.
     This function walks through the directory, finds all images,
     applies the model to each image, and prints the predicted class
     along with the true class (based on the parent directory name).
 
-    @param dir_path: Path to the directory containing images.
-    @type dir_path: str
+    @param path_list: List of image paths.
+    @type path_list: list
     @param model: Pre-trained Keras model for classification.
     @type model: keras.Model
     @param class_names: List of class names corresponding to model output.
@@ -176,39 +176,27 @@ def evaluate_directory(dir_path, model, class_names):
 
     @return: None
     """
-    image_extensions = (".jpg", ".jpeg", ".png")
-    image_paths = []
-
-    for root, _, files in os.walk(dir_path):
-        image_paths.extend([
-            os.path.join(root, f) for f in files
-            if f.lower().endswith(image_extensions)
-        ])
-
-    if not image_paths:
-        print("No images found in directory.")
-        return
-
-    idx = 1
-    total = len(image_paths)
+    total = len(paths_list)
     correct = 0
-    for img_path in sorted(image_paths):
-        # true class = parent directory name
-        true_class = os.path.basename(os.path.dirname(img_path))
+    for i, path in enumerate(paths_list):
+        if not os.path.exists(path):
+            print(f"Path {path} does not exist. Skipping.")
+            continue
 
-        pred_class, conf = predict_single(img_path, model, class_names,
-                                          show_plot=False)
+
+        true_class = os.path.basename(os.path.dirname(path))
+
+        pred_class, conf = predict_single(path, model, class_names,
+                                              show_plot=False)
         is_ok = pred_class == true_class
         emoji = "✔️" if is_ok else "✖️"
         if is_ok:
             correct += 1
 
-        print(f"{idx}/{total} | "
+        print(f"{i}/{total} | " 
               f"{true_class:25s} | "
               f"{pred_class:25s} | "
               f"{conf:6.2%} | {emoji}")
-
-        idx += 1
 
     acc = correct / total
     print("-" * 80)
@@ -231,8 +219,18 @@ def main():
 
     if os.path.isfile(path) and path.lower().endswith(image_extensions):
         predict_single(path, model, class_names, show_plot=True)
+    elif os.path.isfile(path) and path.lower().endswith(".txt"):
+        with open(path, "r") as f:
+            image_paths = [line.strip() for line in f if line.strip()]
+            evaluate_list(image_paths, model, class_names)
     elif os.path.isdir(path):
-        evaluate_directory(path, model, class_names)
+        # Collect all image files in the directory
+        image_paths = []
+        for root, _, files in os.walk(path):
+            for file in files:
+                if file.lower().endswith(image_extensions):
+                    image_paths.append(os.path.join(root, file))
+        evaluate_list(image_paths, model, class_names)
     else:
         print("Provided path is neither a file nor a directory.")
 
