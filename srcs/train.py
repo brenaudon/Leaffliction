@@ -10,6 +10,7 @@ Dependencies:
     - tensorflow.keras.layers
     - tensorflow.keras.Input
     - tensorflow.keras.Model
+    - utils (custom module for utility functions)
     - generator (custom module for data generation)
     - save_zip (custom module for saving model and zip it with cache)
 """
@@ -19,8 +20,9 @@ import random
 import argparse
 from tensorflow.keras import layers, Input, Model
 from tensorflow.keras.models import load_model
-from generator import LeafDataGenerator
+from input_pipeline import make_dataset
 from save_zip import zip_model_and_cache
+from preprocess_dataset import build_prepared_dataset
 
 
 def create_encoder():
@@ -86,16 +88,6 @@ def create_model(num_classes):
     return model
 
 
-def get_args():
-    ap = argparse.ArgumentParser(description="Train or resume training"
-                                             " of the CNN.")
-    ap.add_argument("-d", "--data-dir", required=True,
-                    help="directory containing one sub-folder per class")
-    ap.add_argument("-m", "--model",
-                    help="existing .keras file to resume training from")
-    return ap.parse_args()
-
-
 def find_file_with_basename(directory, basename, class_name=None):
     """
     Find a file in the given directory with the specified basename.
@@ -117,77 +109,87 @@ def find_file_with_basename(directory, basename, class_name=None):
     return None
 
 
-def get_train_val_split(data_dir, class_names, create_split=True):
+def get_train_val_split(data_dir, class_names, cache_dir,
+                        force_new_split: bool):
     """
     Get training and validation samples from the data directory.
     This function gathers all samples from the data directory,
-    and if `create_split` is True, it creates a new train/validation split.
-    If `create_split` is False, it attempts to load existing validation samples
+    and if `force_new_split` is True, it creates a new train/validation split.
+    If `force_new_split` is False, it attempts to load existing split files
     from a cache directory.
 
     @param data_dir: Directory containing class sub-folders
     @type data_dir: str
     @param class_names: List of class names (sub-folder names)
     @type class_names: list
-    @param create_split: Whether to create a new train/validation split
-    @type create_split: bool
+    @param cache_dir: Directory to save or load the train/val split files
+    @type cache_dir: str
+    @param force_new_split: If True, create a new train/val split
+                            even if existing files are found
+    @type force_new_split: bool
 
     @return: Tuple of (train_samples, val_samples)
     @rtype: tuple
     """
-    # Gather all samples from the data directory
+    train_file = os.path.join(cache_dir, "train_split.txt")
+    val_file = os.path.join(cache_dir, "val_split.txt")
+
+    # use existing txt files
+    if (not force_new_split and
+            os.path.exists(train_file) and os.path.exists(val_file)):
+        with open(train_file) as f:
+            train_paths = [ln.strip() for ln in f if ln.strip()]
+        with open(val_file) as f:
+            val_paths = [ln.strip() for ln in f if ln.strip()]
+
+        train_samples = [(p, os.path.basename(os.path.dirname(p)))
+                         for p in train_paths]
+        val_samples = [(p, os.path.basename(os.path.dirname(p)))
+                       for p in val_paths]
+
+        print(f"Loaded split from {train_file} / {val_file} "
+              f"({len(train_samples)} train, {len(val_samples)} val)")
+        return train_samples, val_samples
+
+    # build a fresh split
     all_samples = []
+    for cls in class_names:
+        cls_dir = os.path.join(data_dir, cls)
+        for fn in os.listdir(cls_dir):
+            if fn.lower().endswith(('.jpg', '.jpeg', '.png')):
+                all_samples.append((os.path.join(cls_dir, fn), cls))
 
-    for class_name in class_names:
-        class_path = os.path.join(data_dir, class_name)
-        for fname in os.listdir(class_path):
-            if fname.lower().endswith(('.jpg', '.jpeg', '.png')):
-                all_samples.append((os.path.join(class_path, fname),
-                                    class_name))
+    random.seed(42)
+    random.shuffle(all_samples)
+    cut = int(0.9 * len(all_samples))
+    train_samples = all_samples[:cut]
+    val_samples = all_samples[cut:]
 
-    val_samples = []
-    train_samples = []
-    if not create_split:
-        # If a model is provided, have to keep the same train/validation split
-        # Load validation samples from cache/validation
-        validation_cache_dir = "cache/validation"
-        if not os.path.exists(validation_cache_dir):
-            create_split = True
-        else:
-            for class_name in class_names:
-                class_path = os.path.join(validation_cache_dir, class_name)
-                for fname in os.listdir(class_path):
-                    if fname.lower().endswith(('.jpg', '.jpeg', '.png')):
-                        file_path_in_data = (
-                            find_file_with_basename(data_dir,
-                                                    os.path.splitext(fname)[0],
-                                                    class_name))
-                        val_samples.append((file_path_in_data, class_name))
-            # train_samples is all_samples minus val_samples
-            train_samples = [sample for sample in all_samples
-                             if sample not in val_samples]
+    # save lists to txt (absolute paths)
+    with open(train_file, "w") as f:
+        f.writelines(p[0] + "\n" for p in train_samples)
+    with open(val_file, "w") as f:
+        f.writelines(p[0] + "\n" for p in val_samples)
 
-            if val_samples[0] not in all_samples:
-                print(f"{val_samples[0]} not in all_samples")
-            print(f"Loaded {len(val_samples)} validation samples "
-                  f"from {validation_cache_dir}")
-            print(f"Loaded {len(train_samples)} training samples "
-                  f"from {data_dir}")
-
-    # Create train/validation split
-    if create_split:
-        # Deterministic shuffle + split
-        random.seed(42)
-        random.shuffle(all_samples)
-
-        train_samples = all_samples[:int(0.9 * len(all_samples))]
-        val_samples = all_samples[int(0.9 * len(all_samples)):]
-
-    if len(train_samples) == 0 or len(val_samples) == 0:
-        raise SystemExit("Not enough samples for training or validation. "
-                         "Ensure the data directory contains images.")
-
+    print(f"Created new split → {train_file} / {val_file} "
+          f"({len(train_samples)} train, {len(val_samples)} val)")
     return train_samples, val_samples
+
+
+def get_args():
+    """
+    Parse command line arguments for training the CNN model.
+
+    @return: Parsed arguments
+    @rtype: argparse.Namespace
+    """
+    ap = argparse.ArgumentParser(description="Train or resume training"
+                                             " of the CNN.")
+    ap.add_argument("-i", "--input-dir", required=True,
+                    help="input directory containing one sub-folder per class")
+    ap.add_argument("-m", "--model",
+                    help="existing .keras file to resume training from")
+    return ap.parse_args()
 
 
 def main():
@@ -195,11 +197,12 @@ def main():
     Main function to train the model.
     """
     args = get_args()
-    data_dir = args.data_dir
+    data_dir = args.input_dir
     if not os.path.isdir(data_dir):
         raise SystemExit(f"Data directory not found: {data_dir}")
 
     model_dir = "model"
+    cache_dir = "cache"
     create_split = True if not args.model else False
 
     num_classes = len(os.listdir(data_dir))
@@ -212,15 +215,19 @@ def main():
         for class_name in class_names:
             f.write(f"{class_name}\n")
 
+    # Build prepared dataset if not exists (transformed images)
+    prepared_dataset_dir = "cache/prepared"
+    if not os.path.exists(os.path.join(prepared_dataset_dir, "manifest.json")):
+        print("cache/prepared/ not found: running preprocessing")
+        build_prepared_dataset(input_dir="images",
+                               output_dir=prepared_dataset_dir)
+
     # Get training and validation samples
     train_samples, val_samples = get_train_val_split(
-        data_dir, class_names, create_split=create_split)
+        data_dir, class_names, cache_dir, create_split)
 
-    # Create generators using pre-split data
-    train_gen = LeafDataGenerator(train_samples, class_names,
-                                  batch_size=2, mode='train')
-    val_gen = LeafDataGenerator(val_samples, class_names,
-                                batch_size=2, mode='validation')
+    train_ds = make_dataset(train_samples, shuffle=True)
+    val_ds = make_dataset(val_samples, shuffle=False)
 
     # Create or load model
     if args.model:
@@ -234,7 +241,7 @@ def main():
         print("Creating new model")
         model = create_model(num_classes)
 
-    model.fit(train_gen, validation_data=val_gen, epochs=1)
+    model.fit(train_ds, validation_data=val_ds, epochs=1)
 
     total_epochs = 15
 
@@ -258,10 +265,7 @@ def main():
 
         # Continue training
         print("Continuing training...")
-        model.fit(train_gen, validation_data=val_gen, epochs=1)
-
-    # Only keep Original image in validation cache
-    val_gen.keep_original()
+        model.fit(train_ds, validation_data=val_ds, epochs=1)
 
     zip_model_and_cache(model)
 
