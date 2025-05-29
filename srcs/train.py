@@ -244,15 +244,20 @@ def main():
             raise SystemExit("Class count in model "
                              f"({model.output_shape[-1]}) doesn't match "
                              f"folders ({num_classes}).")
+        # Compute baseline accuracy for checkpointing
+        baseline_acc = model.evaluate(val_ds, verbose=0)[1]
+        print(f"Baseline accuracy: {baseline_acc:.4f}")
     else:
         print("Creating new model")
         model = create_model(num_classes)
+        baseline_acc = 0.0
 
     checkpoint_cb = ModelCheckpoint(
         filepath=os.path.join(model_dir, "model.keras"),
         monitor="val_accuracy",
         mode="max",
         save_best_only=True,
+        initial_value_threshold=baseline_acc,
         save_weights_only=False,
         verbose=1
     )
