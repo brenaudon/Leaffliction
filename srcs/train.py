@@ -189,6 +189,9 @@ def get_args():
                     help="input directory containing one sub-folder per class")
     ap.add_argument("-m", "--model",
                     help="existing .keras file to resume training from")
+    ap.add_argument("-e", "--epochs", type=int, default=1,
+                    help="number of epochs to train the model before asking"
+                         " user input to continue or stop (default: 1)")
     return ap.parse_args()
 
 
@@ -198,6 +201,7 @@ def main():
     """
     args = get_args()
     data_dir = args.input_dir
+    nb_epochs = args.epochs
     if not os.path.isdir(data_dir):
         raise SystemExit(f"Data directory not found: {data_dir}")
 
@@ -241,12 +245,12 @@ def main():
         print("Creating new model")
         model = create_model(num_classes)
 
-    model.fit(train_ds, validation_data=val_ds, epochs=1)
+    model.fit(train_ds, validation_data=val_ds, epochs=nb_epochs)
 
-    total_epochs = 15
+    epoch = nb_epochs
 
-    for epoch in range(1, total_epochs):
-        user_input = input(f"Epoch {epoch + 1}/{total_epochs}."
+    while True:
+        user_input = input(f"Epoch {epoch + 1}."
                            f" Continue training? (y/n): ")
 
         if user_input.lower() != 'y':
@@ -267,6 +271,9 @@ def main():
         print("Continuing training...")
         model.fit(train_ds, validation_data=val_ds, epochs=1)
 
+        epoch += 1
+
+    print("Zipping model and cache...")
     zip_model_and_cache(model)
 
 
