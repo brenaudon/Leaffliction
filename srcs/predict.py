@@ -208,7 +208,8 @@ def main():
     Main function to predict class thanks to previously trained model.
     """
     if len(sys.argv) < 2:
-        print("Usage: python predict.py <image_path>|<directory_path>")
+        print("Usage: python predict.py "
+              "<image_path>|<directory_path>|<txt_file_with_image_paths>")
         sys.exit(1)
 
     path = sys.argv[1]
