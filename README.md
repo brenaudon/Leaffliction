@@ -159,7 +159,7 @@ python srcs/helper.py <path_to_directory>
 
 Distribution script display a pie chart and a bar chart to visualize data distribution. Distribution of the given dataset is as follows:
 
-![Distribution Chart](https://brenaudon.github.io/Leaffliction/doc/distribution.png)
+![Distribution Chart](https://github.com/brenaudon/Leaffliction/blob/master/doc/distribution.png)
 
 ## **Data Augmentation**
 
@@ -172,12 +172,13 @@ Data augmentation script applies various augmentations to images to balance the 
 - **Grid Distortion**: Applies a grid distortion to the image. Interesting for organic shapes like leaves because it preserves the overall aspect of a leaf while locally changing its shape.
 
 Here is an example of the augmentations applied to a single image:
-![Augmentation Example](https://brenaudon.github.io/Leaffliction/doc/augmentation_example.png)
+
+![Augmentation Example](https://github.com/brenaudon/Leaffliction/blob/master/doc/augmentation_example.png)
 
 
 Distribution of the dataset after augmentation is as follows:
 
-![Augmented Distribution Chart](https://brenaudon.github.io/Leaffliction/doc/augmented_distribution.png)
+![Augmented Distribution Chart](https://github.com/brenaudon/Leaffliction/blob/master/doc/augmented_distribution.png)
 
 ## **Data Transformation**
 
@@ -192,8 +193,10 @@ Transformation script applies various transformations to images to extract relev
 To do so the script uses PlantCV library, which is a computer vision library for plant phenotyping. It provides various functions to analyze plant images and extract relevant features.
 
 Here is an example of the transformations applied to a single image:
-![Transformation Example](https://brenaudon.github.io/Leaffliction/doc/transformation_example.png)  
-![Color Histogram Example](https://brenaudon.github.io/Leaffliction/doc/histogram_example.png)
+
+![Transformation Example](https://github.com/brenaudon/Leaffliction/blob/master/doc/transformation_example.png)  
+
+![Color Histogram Example](https://github.com/brenaudon/Leaffliction/blob/master/doc/histogram_example.png)
 
 ## **Neural Network**
 
@@ -212,7 +215,7 @@ After extracting features from the transformed images, we concatenate them with 
 Then, we use a **fully connected layer** to classify the images into one of the classes.
 
 Here is the architecture of the model:  
-![Model Architecture](https://brenaudon.github.io/Leaffliction/doc/model_architecture.png)
+![Model Architecture](https://github.com/brenaudon/Leaffliction/blob/master/doc/model_architecture.png)
 
 ### **Convolutional Neural Network (CNN)**
 
@@ -221,7 +224,7 @@ Convolutional layers are used to **extract local features** from the images by a
 Max pooling layers are used to **downsample the feature maps** and **reduce the number of parameters** in the model. Downsampling is done by taking the maximum value in a certain region of the feature maps (average pooling also exists).
 
 Here is the architecture of the CNN shared by the Siamese Network:  
-![CNN Architecture](https://brenaudon.github.io/Leaffliction/doc/cnn_architecture.png)
+![CNN Architecture](https://github.com/brenaudon/Leaffliction/blob/master/doc/cnn_architecture.png)
 
 ### **Training**
 
@@ -255,7 +258,7 @@ the transformed images and the color histogram through the model.
 Prediction can be done on a single image, a directory of images or a text file containing paths to images.  
 If done on several images, results will be displayed in terminal.  
 If done on a single image, the predicted class will be displayed as asked in the subject brief :  
-![Predicted Class Example](https://brenaudon.github.io/Leaffliction/doc/predicted_class_example.png)
+![Predicted Class Example](https://github.com/brenaudon/Leaffliction/blob/master/doc/predicted_class_example.png)
 
 ### **Zipping Model and Cache**
 
