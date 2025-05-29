@@ -274,7 +274,7 @@ def main():
         epoch += 1
 
     print("Zipping model and cache...")
-    zip_model_and_cache(model)
+    zip_model_and_cache()
 
 
 if __name__ == "__main__":
