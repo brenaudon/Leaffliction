@@ -80,6 +80,11 @@ def zip_model_and_cache(
 
 
 def main():
+    """
+    Main function to create a zip package of the model and cache.
+
+    @return: None
+    """
     zip_model_and_cache()
 
 
