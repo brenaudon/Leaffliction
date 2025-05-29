@@ -247,6 +247,7 @@ Using TensorFlow's data API allows us to efficiently load and preprocess the ima
 ### **Evaluation**
 
 The model is evaluated on the validation set after each epoch. The evaluation metric is the **accuracy** of the model on the validation set.  
+Train / validation split is 90% / 10% of the dataset.
 The model is saved in the `model/` directory after each epoch if the accuracy is improved.
 
 ### **Prediction**
