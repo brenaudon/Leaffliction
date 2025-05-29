@@ -10,6 +10,8 @@ Dependencies:
     - tensorflow.keras.layers
     - tensorflow.keras.Input
     - tensorflow.keras.Model
+    - tensorflow.keras.models.load_model
+    - tensorflow.keras.callbacks.ModelCheckpoint
     - utils (custom module for utility functions)
     - generator (custom module for data generation)
     - save_zip (custom module for saving model and zip it with cache)
@@ -20,6 +22,7 @@ import random
 import argparse
 from tensorflow.keras import layers, Input, Model
 from tensorflow.keras.models import load_model
+from tensorflow.keras.callbacks import ModelCheckpoint
 from input_pipeline import make_dataset
 from save_zip import zip_model_and_cache
 from preprocess_dataset import build_prepared_dataset
@@ -245,7 +248,19 @@ def main():
         print("Creating new model")
         model = create_model(num_classes)
 
-    model.fit(train_ds, validation_data=val_ds, epochs=nb_epochs)
+    checkpoint_cb = ModelCheckpoint(
+        filepath=os.path.join(model_dir, "model.keras"),
+        monitor="val_accuracy",
+        mode="max",
+        save_best_only=True,
+        save_weights_only=False,
+        verbose=1
+    )
+
+    model.fit(train_ds,
+              validation_data=val_ds,
+              epochs=nb_epochs,
+              callbacks=[checkpoint_cb])
 
     epoch = nb_epochs
 
@@ -255,7 +270,9 @@ def main():
 
         if user_input.lower() != 'y':
             print("Training stopped by user.")
-            user_input = input("Save last model? (y/n): ")
+            user_input = input("Save last model (already saved if better"
+                               " accuracy on validation set than previous"
+                               " epoch)? (y/n): ")
             if user_input.lower() == 'y':
                 print("Saving model...")
                 model.save(model_dir + "/model.keras")
@@ -263,13 +280,12 @@ def main():
                 print("Model not saved.")
             break
 
-        # Save model
-        print("Saving last model...")
-        model.save(model_dir + "/model.keras")
-
         # Continue training
         print("Continuing training...")
-        model.fit(train_ds, validation_data=val_ds, epochs=1)
+        model.fit(train_ds,
+                  validation_data=val_ds,
+                  epochs=1,
+                  callbacks=[checkpoint_cb])
 
         epoch += 1
 
