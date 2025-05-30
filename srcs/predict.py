@@ -183,17 +183,16 @@ def evaluate_list(paths_list, model, class_names):
             print(f"Path {path} does not exist. Skipping.")
             continue
 
-
         true_class = os.path.basename(os.path.dirname(path))
 
         pred_class, conf = predict_single(path, model, class_names,
-                                              show_plot=False)
+                                          show_plot=False)
         is_ok = pred_class == true_class
         emoji = "✔️" if is_ok else "✖️"
         if is_ok:
             correct += 1
 
-        print(f"{i}/{total} | " 
+        print(f"{i}/{total} | "
               f"{true_class:25s} | "
               f"{pred_class:25s} | "
               f"{conf:6.2%} | {emoji}")
