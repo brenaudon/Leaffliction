@@ -229,8 +229,8 @@ Here is the architecture of the CNN shared by the Siamese Network:
 ### **Training**
 
 The model is trained using the **Adam optimizer** and the **categorical crossentropy** loss function.  
-The model is trained on the augmented dataset with a **batch size of 16**.  
-As epochs are pretty long (around 45 minutes for a batch size of 16), we decided to ask **user input** to continue training after each epoch.
+The model is trained on the augmented dataset with a **batch size of 8** (unstable with larger batch size due to memory constraints, could get killed by zsh).  
+As epochs are pretty long (around 75 minutes for a batch size of 8, 45 minutes for batch size of 16), we decided to ask **user input** to continue training after each epoch.
 An option is available to specify the number of epochs to train before asking user input to continue.
 
 Training can be **resumed** by specifying a pre-trained model. In this case, the model will be trained on the **validation set** split from the **cache directory** (`cache/val_split.txt`).

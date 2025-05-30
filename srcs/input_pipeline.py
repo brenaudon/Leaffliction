@@ -22,7 +22,7 @@ PREP_DIR = "cache/prepared"
 IMG_KEYS = ["Original", "Gaussian Blur", "Mask",
             "ROI", "Analyze Objects", "Landmark"]
 HIST_SIZE = 2304
-BATCH = 16
+BATCH = 8
 
 
 def make_dataset(samples, shuffle=True):
