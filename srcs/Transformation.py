@@ -199,7 +199,7 @@ def save_transformed_data(tranform_result, image_name, save_path):
     """
     os.makedirs(save_path, exist_ok=True)
     for key, result_img in tranform_result.items():
-        save_path_img = os.path.join(save_path, f"{image_name}_{key}.png")
+        save_path_img = os.path.join(save_path, f"{image_name}_{key}.jpg")
         if key == 'Original':
             pass
         elif key == 'Color_Histogram':
@@ -376,8 +376,7 @@ def process_directory(src, dst, tags):
         for file in tqdm(files):
             if file.lower().endswith(('.jpg', '.jpeg', '.png')):
                 src_image_path = os.path.join(root, file)
-                relative_path = os.path.relpath(root, src)
-                dst_image_dir = os.path.join(dst, relative_path)
+                dst_image_dir = os.path.join(dst)
                 apply_transformations(src_image_path,
                                       save_results=True,
                                       dst_directory=dst_image_dir,
