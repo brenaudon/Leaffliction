@@ -98,12 +98,12 @@ python srcs/Transformation.py <path_to_image>
 **Transformation on a directory of images**
 
 ```bash
-python srcs/Transformation.py -src <source_directory> -dst <destination_directory> [tags]
+python srcs/Transformation.py -src <source_directory> -dst <destination_directory> tags[...tags]
 ```
 
 - `<source_directory>`: Path to a directory containing images. Will apply transformations to all images in the directory.
 - `<destination_directory>`: Path to the directory where transformed images will be saved.
-- `[tags]`: Optional tags to define which transformations to apply. If not specified, all transformations will be applied. 
+- `tags[...tags]`: At least one tag to define which transformations to apply.
   Available tags: `-all`, `-gaussian`, `-mask`, `-analyze`, `-roi`, `-landmark`, `-hist`. Please refer to **Transformations** section for more details on each transformation.
 
 ### 🔹 **4. Preprocess dataset**

@@ -178,9 +178,11 @@ def evaluate_list(paths_list, model, class_names):
     """
     total = len(paths_list)
     correct = 0
+    skipped = 0
     for i, path in enumerate(paths_list):
         if not os.path.exists(path):
             print(f"Path {path} does not exist. Skipping.")
+            skipped += 1
             continue
 
         true_class = os.path.basename(os.path.dirname(path))
@@ -192,12 +194,12 @@ def evaluate_list(paths_list, model, class_names):
         if is_ok:
             correct += 1
 
-        print(f"{i}/{total} | "
+        print(f"{i - skipped}/{total - skipped} | "
               f"{true_class:25s} | "
               f"{pred_class:25s} | "
               f"{conf:6.2%} | {emoji}")
 
-    acc = correct / total
+    acc = correct / (total - skipped)
     print("-" * 80)
     print(f"Accuracy on {total} images: {acc:.2%} ({correct}/{total})")
 
